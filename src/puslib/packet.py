@@ -19,8 +19,8 @@ from puslib.crc_ccitt import calculate as crc_ccitt_calculate
 _CCSDS_PACKET_VERSION_NUMBER = 0
 _CCSDS_MAX_PACKET_SIZE = 65542
 
-_TM_PACKET_PUS_VERSION_NUMBER = 2
-_TC_PACKET_PUS_VERSION_NUMBER = 2
+TM_PACKET_PUS_VERSION_NUMBER = 1
+TC_PACKET_PUS_VERSION_NUMBER = 1
 
 _COMMON_SEC_HDR_STRUCT = struct.Struct('>BBB')
 _PEC_FIELD_SIZE = 2
@@ -144,8 +144,9 @@ class CcsdsSpacePacket:
             packet object
         """
         packet_id, seq_ctrl, data_length = cls._CCSDS_HDR_STRUCT.unpack_from(buffer)
-
+        print(f"{packet_id=} {seq_ctrl=} ")
         packet_size = cls._CCSDS_HDR_STRUCT.size + data_length + 1
+        print(f"{cls._CCSDS_HDR_STRUCT.size=} {packet_size=} {len(buffer)=}, {data_length=}")
         if packet_size > len(buffer):
             raise IncompletePacketException()
         if packet_size > _CCSDS_MAX_PACKET_SIZE:
@@ -252,12 +253,12 @@ class _PacketSecondaryHeaderTc:
 
 class PusTcPacket(CcsdsSpacePacket):
     """Represent a PUS TC packet."""
-
-    _SOURCE_FIELD_SIZE = 2
+    _SOURCE_FIELD_SIZE = 1
 
     def __init__(self, has_pec: bool = True):
         super().__init__(has_pec)
         self.secondary_header = _PacketSecondaryHeaderTc()
+        print("TEST",self._SOURCE_FIELD_SIZE)
 
     def __len__(self):
         size = super().__len__()
@@ -489,7 +490,7 @@ class PusTmPacket(CcsdsSpacePacket):
     """Represent a PUS TM packet."""
 
     _MSG_TYPE_COUNTER_FIELD_SIZE = 2
-    _DESTINATION_FIELD_SIZE = 2
+    _DESTINATION_FIELD_SIZE = 1
 
     def __init__(self, has_pec: bool = True):
         super().__init__(has_pec)
@@ -596,7 +597,7 @@ class PusTmPacket(CcsdsSpacePacket):
 
         if secondary_header_flag:
             # Length field not completely validated until further down if cuc_time argument is None
-            data_field_except_source_length = _COMMON_SEC_HDR_STRUCT.size + (2 if has_type_counter_field else 0) + (2 if has_destination_field else 0) + (len(cuc_time) if cuc_time else 0) + (2 if has_pec else 0)
+            data_field_except_source_length = _COMMON_SEC_HDR_STRUCT.size + (2 if has_type_counter_field else 0) + (cls._DESTINATION_FIELD_SIZE if has_destination_field else 0) + (len(cuc_time) if cuc_time else 0) + (2 if has_pec else 0)
             if len(buffer) < cls._CCSDS_HDR_STRUCT.size + data_field_except_source_length:
                 raise IncompletePacketException()
 
