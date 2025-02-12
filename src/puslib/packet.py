@@ -145,6 +145,7 @@ class CcsdsSpacePacket:
         """
         packet_id, seq_ctrl, data_length = cls._CCSDS_HDR_STRUCT.unpack_from(buffer)
         packet_size = cls._CCSDS_HDR_STRUCT.size + data_length + 1
+        print(f"{cls._CCSDS_HDR_STRUCT.size=} {packet_size=} {len(buffer)=}, {data_length=}")
         if packet_size > len(buffer):
             raise IncompletePacketException()
         if packet_size > _CCSDS_MAX_PACKET_SIZE:
@@ -256,6 +257,7 @@ class PusTcPacket(CcsdsSpacePacket):
     def __init__(self, has_pec: bool = True):
         super().__init__(has_pec)
         self.secondary_header = _PacketSecondaryHeaderTc()
+        print("TEST",self._SOURCE_FIELD_SIZE)
 
     def __len__(self):
         size = super().__len__()
