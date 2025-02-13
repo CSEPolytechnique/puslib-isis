@@ -144,9 +144,7 @@ class CcsdsSpacePacket:
             packet object
         """
         packet_id, seq_ctrl, data_length = cls._CCSDS_HDR_STRUCT.unpack_from(buffer)
-        print(f"{packet_id=} {seq_ctrl=} ")
         packet_size = cls._CCSDS_HDR_STRUCT.size + data_length + 1
-        print(f"{cls._CCSDS_HDR_STRUCT.size=} {packet_size=} {len(buffer)=}, {data_length=}")
         if packet_size > len(buffer):
             raise IncompletePacketException()
         if packet_size > _CCSDS_MAX_PACKET_SIZE:
@@ -258,7 +256,6 @@ class PusTcPacket(CcsdsSpacePacket):
     def __init__(self, has_pec: bool = True):
         super().__init__(has_pec)
         self.secondary_header = _PacketSecondaryHeaderTc()
-        print("TEST",self._SOURCE_FIELD_SIZE)
 
     def __len__(self):
         size = super().__len__()
@@ -487,9 +484,7 @@ class _PacketSecondaryHeaderTm:
 
 
 class PusTmPacket(CcsdsSpacePacket):
-    """Represent a PUS TM packet."""
-
-    _MSG_TYPE_COUNTER_FIELD_SIZE = 2
+    _MSG_TYPE_COUNTER_FIELD_SIZE = 1
     _DESTINATION_FIELD_SIZE = 1
 
     def __init__(self, has_pec: bool = True):
@@ -710,7 +705,7 @@ class PusTmPacket(CcsdsSpacePacket):
         time = kwargs.get('time', None)
 
         if kwargs.get('secondary_header_flag', True):
-            secondary_header_length = _COMMON_SEC_HDR_STRUCT.size + (2 if msg_type_counter is not None else 0) + (2 if destination is not None else 0) + len(time)
+            secondary_header_length = _COMMON_SEC_HDR_STRUCT.size + (cls._DESTINATION_FIELD_SIZE if msg_type_counter is not None else 0) + (cls._DESTINATION_FIELD_SIZE if destination is not None else 0) + len(time)
             kwargs['secondary_header_length'] = secondary_header_length
         kwargs['packet_type'] = PacketType.TM
         kwargs['seq_count_or_name'] = kwargs.get('seq_count', 0)
