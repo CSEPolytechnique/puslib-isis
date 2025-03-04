@@ -53,7 +53,7 @@ class Process:
         self._pus_service_1 = services.RequestVerification(self._ident, tm_output_stream)
         self._pus_services[1] = self._pus_service_1
         if housekeeping:
-            self._pus_service_3 = services.Housekeeping(self._ident, self._pus_service_1, tm_output_stream)
+            self._pus_service_3 = services.Housekeeping(self._ident, self._pus_service_1, tm_output_stream, self._params)
             self._pus_services[3] = self._pus_service_3
         if event_reporting:
             self._pus_service_5 = services.EventReporting(self._ident, self._pus_service_1, tm_output_stream)
