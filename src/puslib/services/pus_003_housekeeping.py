@@ -8,6 +8,7 @@ from .error_codes import CommonErrorCode
 from .. import get_policy
 
 
+
 class Report(ParamReport):
     def __init__(self, sid, collection_interval, enabled=True, params_in_report=None):
         super().__init__(sid, enabled, params_in_report)
@@ -21,6 +22,8 @@ class Report(ParamReport):
     def collection_interval(self, new_value):
         self._collection_interval = new_value
 
+    
+
 
 class Housekeeping(PusService):
     def __init__(self, ident, pus_service_1, tm_output_stream, params):
@@ -28,24 +31,37 @@ class Housekeeping(PusService):
         self._params = params
         self._housekeeping_reports = {}
         self._diagnostic_reports = {}
-        self._register_sub_service(1, partial(self._create_or_append_report, append=False, diagnostic=False))
+        # self._register_sub_service(1, partial(self._create_or_append_report, append=False, diagnostic=False))
         self._register_sub_service(2, partial(self._create_or_append_report, append=False, diagnostic=True))
-        self._register_sub_service(3, partial(self._delete_reports, diagnostic=False))
+        # self._register_sub_service(3, partial(self._delete_reports, diagnostic=False))
         self._register_sub_service(4, partial(self._delete_reports, diagnostic=True))
         self._register_sub_service(5, partial(self._toggle_reports, diagnostic=False, enable=True))
         self._register_sub_service(6, partial(self._toggle_reports, diagnostic=False, enable=False))
         self._register_sub_service(7, partial(self._toggle_reports, diagnostic=True, enable=True))
         self._register_sub_service(8, partial(self._toggle_reports, diagnostic=True, enable=False))
-        self._register_sub_service(9, partial(self._request_report_structures, diagnostic=False))
+        # self._register_sub_service(9, partial(self._request_report_structures, diagnostic=False))
         self._register_sub_service(11, partial(self._request_report_structures, diagnostic=True))
-        self._register_sub_service(27, partial(self._request_reports, diagnostic=False))
-        self._register_sub_service(28, partial(self._request_reports, diagnostic=True))
-        self._register_sub_service(29, partial(self._create_or_append_report, append=True, diagnostic=False))
-        self._register_sub_service(30, partial(self._create_or_append_report, append=True, diagnostic=True))
-        self._register_sub_service(31, partial(self._modify_report_intervals, diagnostic=False))
-        self._register_sub_service(32, partial(self._modify_report_intervals, diagnostic=True))
-        self._register_sub_service(33, partial(self._request_interval_properties, diagnostic=False))
-        self._register_sub_service(34, partial(self._request_interval_properties, diagnostic=True))
+        # self._register_sub_service(27, partial(self._request_reports, diagnostic=False))
+        # self._register_sub_service(28, partial(self._request_reports, diagnostic=True))
+        # self._register_sub_service(29, partial(self._create_or_append_report, append=True, diagnostic=False))
+        # self._register_sub_service(30, partial(self._create_or_append_report, append=True, diagnostic=True))
+        # self._register_sub_service(31, partial(self._modify_report_intervals, diagnostic=False))
+        # self._register_sub_service(32, partial(self._modify_report_intervals, diagnostic=True))
+        # self._register_sub_service(33, partial(self._request_interval_properties, diagnostic=False))
+        # self._register_sub_service(34, partial(self._request_interval_properties, diagnostic=True))
+
+        #ISIS
+        #self._register_sub_service(17,...)
+        # self._register_sub_service(19,...)
+        # self._register_sub_service(21,...)
+        self._register_sub_service(128,partial(self._request_single_report, diagnostic=False))
+        self._register_sub_service(129,partial(self._request_single_report, diagnostic=True))
+        self._register_sub_service(130,partial(self._modify_report_intervals, diagnostic=False))
+        self._register_sub_service(131,partial(self._modify_report_intervals, diagnostic=True))
+        # self._register_sub_service(134,...)
+        # self._register_sub_service(140,...)
+        # self._register_sub_service(144,...)
+
 
     def add(self, sid, collection_interval, params_in_report=None, enabled=True, diagnostic=False):
         reports = self._diagnostic_reports if diagnostic else self._housekeeping_reports
@@ -76,7 +92,7 @@ class Housekeeping(PusService):
             get_policy().housekeeping.count_type(len(report)).to_bytes()
         for pid, _ in report:
             app_data += get_policy().common.param_id_type(pid).to_bytes()
-        app_data += get_policy().housekeeping.count_type(0).to_bytes()
+        #app_data += get_policy().housekeeping.count_type(0).to_bytes()
         packet = get_policy().PusTmPacket(
             apid=apid,
             seq_count=seq_count,
@@ -137,13 +153,13 @@ class Housekeeping(PusService):
             if len(param_ids) != len(set(param_ids)):
                 return CommonErrorCode.PUS3_PARAM_DUPLICATION
             param_ids = [param_id for param_id in param_ids if param_id in self._params]
-            offset += struct.calcsize(fmt)
+            # offset += struct.calcsize(fmt)
 
-            # parse number of fixed-length arrays
-            nfa = get_policy().housekeeping.count_type()
-            nfa.value = nfa.from_bytes(app_data[offset:])
-            if nfa.value != 0:
-                raise NotImplementedError  # super commutated parameters is not supported
+            # # parse number of fixed-length arrays
+            # nfa = get_policy().housekeeping.count_type()
+            # nfa.value = nfa.from_bytes(app_data[offset:])
+            # if nfa.value != 0:
+            #     raise NotImplementedError  # super commutated parameters is not supported
 
             params = OrderedDict([(param_id, self._params[param_id]) for param_id in param_ids])
             if append:
@@ -218,6 +234,16 @@ class Housekeeping(PusService):
             self._tm_output_stream.write(packet)
 
         return self._for_each_report_id(app_data, diagnostic, operation)
+    
+    def _request_single_report(self, app_data, diagnostic=False):
+        sid_param = get_policy().housekeeping.structure_id_type()
+        report_id = sid_param.from_bytes(app_data)
+        reports = self._diagnostic_reports if diagnostic else self._housekeeping_reports
+        report = reports[report_id]
+        packet = Housekeeping.create_parameter_report(self._ident.apid, self._ident.seq_count(), report, diagnostic)
+        self._tm_output_stream.write(packet)
+
+        return True
 
     def _modify_report_intervals(self, app_data, diagnostic=False):
         reports = self._diagnostic_reports if diagnostic else self._housekeeping_reports
@@ -260,3 +286,4 @@ class Housekeeping(PusService):
 
         except struct.error:
             return CommonErrorCode.INCOMPLETE
+
