@@ -14,6 +14,7 @@ from puslib import get_policy
 import sched
 
 
+
 class Report(ParamReport):
     """Represent a housekeeping report.
 
