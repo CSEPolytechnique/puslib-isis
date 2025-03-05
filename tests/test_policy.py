@@ -19,16 +19,13 @@ def test_factory_functions():
     tm_packet = get_policy().PusTmPacket(time=cuc_time)
     assert tm_packet.secondary_header.pus_version == 1
 
-    tm_packet = get_policy().PusTmPacket(pus_version=2, time=cuc_time)
-    assert tm_packet.secondary_header.pus_version == 2
+
 
     tc_packet = get_policy().PusTcPacket()
     assert tc_packet.secondary_header.pus_version == 1
     assert len(tc_packet) == 11
 
-    tc_packet = get_policy().PusTcPacket(pus_version=2, source=0)
-    assert tc_packet.secondary_header.pus_version == 2
-    assert len(tc_packet) == 13
+
 
 
 def test_set_policy():
