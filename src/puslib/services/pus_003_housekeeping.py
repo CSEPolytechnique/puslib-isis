@@ -11,7 +11,7 @@ from puslib.services.service import PusService, PusServiceType
 from puslib.services.param_report import ParamReport
 from puslib.services.error_codes import CommonErrorCode
 from puslib import get_policy
-
+import sched
 
 
 class Report(ParamReport):
@@ -60,6 +60,9 @@ class Housekeeping(PusService):
         self._params = params
         self._housekeeping_reports = {}
         self._diagnostic_reports = {}
+        self._housekeeping_schedule = {}
+        self._diagnostic_schedule = {}
+        self._scheduler = sched.scheduler()
         # self._register_sub_service(1, partial(self._create_or_append_report, append=False, diagnostic=False))
         self._register_sub_service(2, partial(self._create_or_append_report, append=False, diagnostic=True))
         # self._register_sub_service(3, partial(self._delete_reports, diagnostic=False))
@@ -261,12 +264,17 @@ class Housekeeping(PusService):
     def _toggle_reports(self, app_data: SupportsBytes, diagnostic: bool = False, enable: bool = True):
         def operation(report_id, reports, enable):
             report = reports[report_id]
-            if enable:
+            schedule = self._diagnostic_schedule if diagnostic else self._housekeeping_schedule
+            if enable and not report.enabled: 
                 report.enable()
-            else:
+                schedule[report_id]=self.scheduler.enter(report.collection_interval, 1, Housekeeping._perdiodic_repport, (self,report_id,diagnostic))
+                
+            elif not enable and report.enabled:
                 report.disable()
+                self.scheduler.cancel(schedule[report_id])
 
         return self._for_each_report_id(app_data, diagnostic, operation, enable)
+    
 
     def _request_report_structures(self, app_data: SupportsBytes, diagnostic: bool = False):
         def operation(report_id, reports):
@@ -335,4 +343,19 @@ class Housekeeping(PusService):
 
         except struct.error:
             return CommonErrorCode.INCOMPLETE
+
+
+    def _perdiodic_repport(self,report_id, diagnostic):
+        if diagnostic:
+            reports = self._diagnostic_reports
+            schedule = self._diagnostic_schedule
+        else:
+            reports = self._housekeeping_reports
+            schedule = self._housekeeping_schedule
+        report = reports[report_id]
+        schedule[report_id] = self.scheduler.enter(report.collection_interval, 1, Housekeeping._perdiodic_repport, (self,report_id,diagnostic))
+        packet = Housekeeping.create_parameter_report(self._ident.apid, self._ident.seq_count(), report, diagnostic)
+        self._tm_output_stream.write(packet)
+        
+
 
