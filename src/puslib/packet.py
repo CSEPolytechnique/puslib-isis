@@ -242,7 +242,7 @@ class AckFlag(IntFlag):
 
 @dataclass(slots=True)
 class _PacketSecondaryHeaderTc:
-    pus_version: int = _TC_PACKET_PUS_VERSION_NUMBER
+    pus_version: int = TC_PACKET_PUS_VERSION_NUMBER
     ack_flags: AckFlag = AckFlag.NONE
     service_type: int = 0
     service_subtype: int = 0
@@ -445,7 +445,7 @@ class PusTcPacket(CcsdsSpacePacket):
         packet = super(cls, cls).create(**kwargs)
 
         if packet.header.secondary_header_flag:
-            pus_version = kwargs.get('pus_version', _TC_PACKET_PUS_VERSION_NUMBER)
+            pus_version = kwargs.get('pus_version', TC_PACKET_PUS_VERSION_NUMBER)
             if pus_version is not None:
                 _validate_int_field('TC packet PUS version', pus_version, 0, 0b1111)
                 packet.secondary_header.pus_version = pus_version
@@ -474,7 +474,7 @@ class PusTcPacket(CcsdsSpacePacket):
 
 @dataclass(slots=True)
 class _PacketSecondaryHeaderTm:
-    pus_version: int = _TM_PACKET_PUS_VERSION_NUMBER
+    pus_version: int = TM_PACKET_PUS_VERSION_NUMBER
     spacecraft_time_ref_status: int = 0
     service_type: int = 0
     service_subtype: int = 0
@@ -712,7 +712,7 @@ class PusTmPacket(CcsdsSpacePacket):
         packet = super(cls, cls).create(**kwargs)
 
         if packet.header.secondary_header_flag:
-            pus_version = kwargs.get('pus_version', _TM_PACKET_PUS_VERSION_NUMBER)
+            pus_version = kwargs.get('pus_version', TM_PACKET_PUS_VERSION_NUMBER)
             if pus_version is not None:
                 _validate_int_field('TM packet PUS version', pus_version, 0, 0b1111)
                 packet.secondary_header.pus_version = pus_version

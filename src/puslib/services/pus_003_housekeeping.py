@@ -150,7 +150,7 @@ class Housekeeping(PusService):
             bytes(get_policy().housekeeping.collection_interval_type(report.collection_interval)) + \
             bytes(get_policy().housekeeping.count_type(len(report)))
         for pid, _ in report:
-            app_data += get_policy().common.param_id_type(pid).to_bytes()
+            app_data += bytes(get_policy().common.param_id_type(pid))
         #app_data += get_policy().housekeeping.count_type(0).to_bytes()
         packet = get_policy().PusTmPacket(
             apid=apid,

@@ -4,7 +4,7 @@ from typing import Type
 
 from puslib.packet import PusTcPacket, PusTmPacket, AckFlag
 from puslib.time import CucTime
-from puslib.parameter import Parameter, UInt8Parameter, UInt16Parameter
+from puslib.parameter import Parameter, UInt8Parameter, UInt16Parameter, UInt32Parameter
 
 
 @dataclass(slots=True)
@@ -82,7 +82,7 @@ class PusPolicy:
         tc = Telecommanding()
         tm = Telemetry()
         pus_version = 1  # 1 - PUS rev A; 2 - PUS rev C
-        param_id_type = UInt16Parameter
+        param_id_type = UInt32Parameter
 
     @dataclass(slots=True)
     class RequestVerification:
@@ -90,14 +90,14 @@ class PusPolicy:
 
     @dataclass(slots=True)
     class Housekeeping:
-        structure_id_type = UInt16Parameter
+        structure_id_type = UInt32Parameter
         collection_interval_type = UInt16Parameter
         count_type = UInt16Parameter
         periodic_generation_action_status_type = UInt8Parameter  # TM[3,35] & TM[3,36]
 
     @dataclass(slots=True)
     class EventReporting:
-        event_definition_id_type = UInt16Parameter
+        event_definition_id_type = UInt32Parameter
         count_type = UInt8Parameter
 
     @dataclass(slots=True)
