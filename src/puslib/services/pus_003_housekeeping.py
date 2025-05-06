@@ -119,6 +119,15 @@ class Housekeeping(PusService):
 
         report = Report(sid, collection_interval, enabled, params_in_report)
         reports[sid] = report
+        if enabled:
+            if diagnostic:
+                reports = self._diagnostic_reports
+                schedule = self._diagnostic_schedule
+            else:
+                reports = self._housekeeping_reports
+                schedule = self._housekeeping_schedule
+            report = reports[sid]
+            schedule[sid] = self._scheduler.enter(report.collection_interval, 1, Housekeeping._periodic_report, (self,sid,diagnostic))
         return report
 
     @staticmethod
@@ -267,11 +276,11 @@ class Housekeeping(PusService):
             schedule = self._diagnostic_schedule if diagnostic else self._housekeeping_schedule
             if enable and not report.enabled: 
                 report.enable()
-                schedule[report_id]=self.scheduler.enter(report.collection_interval, 1, Housekeeping._perdiodic_repport, (self,report_id,diagnostic))
+                schedule[report_id]=self._scheduler.enter(report.collection_interval, 1, Housekeeping._periodic_report, (self,report_id,diagnostic))
                 
             elif not enable and report.enabled:
                 report.disable()
-                self.scheduler.cancel(schedule[report_id])
+                self._scheduler.cancel(schedule[report_id])
 
         return self._for_each_report_id(app_data, diagnostic, operation, enable)
     
@@ -345,7 +354,7 @@ class Housekeeping(PusService):
             return CommonErrorCode.INCOMPLETE
 
 
-    def _perdiodic_repport(self,report_id, diagnostic):
+    def _periodic_report(self,report_id, diagnostic):
         if diagnostic:
             reports = self._diagnostic_reports
             schedule = self._diagnostic_schedule
@@ -353,7 +362,7 @@ class Housekeeping(PusService):
             reports = self._housekeeping_reports
             schedule = self._housekeeping_schedule
         report = reports[report_id]
-        schedule[report_id] = self.scheduler.enter(report.collection_interval, 1, Housekeeping._perdiodic_repport, (self,report_id,diagnostic))
+        schedule[report_id] = self._scheduler.enter(report.collection_interval, 1, Housekeeping._periodic_report, (self,report_id,diagnostic))
         packet = Housekeeping.create_parameter_report(self._ident.apid, self._ident.seq_count(), report, diagnostic)
         self._tm_output_stream.write(packet)
         

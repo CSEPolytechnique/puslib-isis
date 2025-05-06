@@ -183,8 +183,7 @@ def test_parameter_report(service_3_setup, is_diagnostic_report):
     pus_service_3.add(sid=1, collection_interval=1000, params_in_report=params, enabled=True, diagnostic=is_diagnostic_report)
 
     # Request parameter report
-    app_data = get_policy().housekeeping.count_type(1).to_bytes() + \
-        get_policy().housekeeping.structure_id_type(1).to_bytes()
+    app_data = get_policy().housekeeping.structure_id_type(1).to_bytes()
     packet = PusTcPacket.create(apid=ident.apid, name=0, ack_flags=AckFlag.NONE, service_type=3, service_subtype=129 if is_diagnostic_report else 128, data=app_data)
     pus_service_3.enqueue(packet)
     pus_service_3.process()
