@@ -1,6 +1,8 @@
 from functools import partial
 from dataclasses import dataclass
 from typing import Type
+from datetime import datetime
+
 
 from puslib.packet import PusTcPacket, PusTmPacket, AckFlag
 from puslib.time import CucTime
@@ -10,9 +12,10 @@ from puslib.parameter import Parameter, UInt8Parameter, UInt16Parameter, UInt32P
 @dataclass(slots=True)
 class Time:
     """Time related settings."""
-    has_preamble: bool = True
+    has_preamble: bool = False
     basic_unit_length: int = 4
-    frac_unit_length: int = 2
+    frac_unit_length: int = 3
+    epoch=datetime(year=1950, month=1, day=1)
 
 
 @dataclass(slots=True)
@@ -24,10 +27,24 @@ class Telecommanding:
 @dataclass(slots=True)
 class Telemetry:
     """Telemetry related settings."""
-    destination_id_type: Type[Parameter] | None = None
-    msg_type_counter_type: Type[Parameter] | None = None
+    destination_id_type: Type[Parameter] | None = 2
+    msg_type_counter_type: Type[Parameter] | None = 2
     time = Time()
 
+
+
+
+ 
+
+def subcounter(counter={},/, **kwargs):
+    
+    try:
+        key = (kwargs["service_type"], kwargs["service_subtype"])
+    except KeyError:
+        return None
+    count = counter.get(key, 0)
+    counter[key] = (count + 1) % 256
+    return count
 
 class PusPolicy:
     """Represent a PUS policy.
@@ -57,7 +74,9 @@ class PusPolicy:
             CucTime.create,
             basic_unit_length=self.common.tm.time.basic_unit_length,
             frac_unit_length=self.common.tm.time.frac_unit_length,
-            has_preamble=self.common.tm.time.has_preamble)
+            has_preamble=self.common.tm.time.has_preamble,
+            epoch=self.common.tm.time.epoch)
+            
         return func(*args, **kwargs)
 
     def PusTcPacket(self, *args, **kwargs):  # pylint: disable=invalid-name
@@ -65,14 +84,18 @@ class PusPolicy:
             PusTcPacket.create,
             pus_version=self.common.pus_version,
             ack_flags=AckFlag.NONE,
-            source=self.common.tc.source_id_type)
+            source=self.common.tc.source_id_type,
+            msg_type_counter=subcounter(**kwargs),)
         return func(*args, **kwargs)
+    
+
+
 
     def PusTmPacket(self, *args, **kwargs):  # pylint: disable=invalid-name
         func = partial(
             PusTmPacket.create,
             pus_version=self.common.pus_version,
-            msg_type_counter=self.common.tm.msg_type_counter_type,
+            msg_type_counter=subcounter(**kwargs),
             destination=self.common.tm.destination_id_type)
         return func(*args, **kwargs)
 
