@@ -1,6 +1,38 @@
+
+
+[project]
+name = "puslib"
+dynamic=["version"]
+description = "An implementation of the telemetry and telecommand packet utilization standard (PUS), ISIS version."
+readme = "README.md"
+
+license = { text = "MIT License" }
+authors = [
+    { name = "Pontus Nyman", email = "pontusnyman@gmail.com" },
+    { name = "Nicolas Lequette", email = "nicolas.lequette@orange.fr" },
+]
+dependencies = [
+    "bitstring",
+    "bitarray"
+]
+requires-python = ">=3.7"
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [build-system]
 requires = [
     "setuptools>=42",
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4.4",
+]
+
