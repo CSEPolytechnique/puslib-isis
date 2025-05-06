@@ -107,7 +107,7 @@ class Process:
             periodic(self._scheduler, interval, priority, func)
         return add_action
 
-    def function(self, fid: int, args: Sequence[Parameter]) -> Callable[...]:
+    def function(self, fid: int, args: Sequence[Parameter]):
         """Add a function to the function management service.
 
         Arguments:
