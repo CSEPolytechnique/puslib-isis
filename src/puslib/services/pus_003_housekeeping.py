@@ -11,8 +11,9 @@ from puslib.services.service import PusService, PusServiceType
 from puslib.services.param_report import ParamReport
 from puslib.services.error_codes import CommonErrorCode
 from puslib import get_policy
-import sched
-
+import sched 
+import threading
+import time
 
 
 class Report(ParamReport):
@@ -64,24 +65,19 @@ class Housekeeping(PusService):
         self._housekeeping_schedule = {}
         self._diagnostic_schedule = {}
         self._scheduler = sched.scheduler()
-        # self._register_sub_service(1, partial(self._create_or_append_report, append=False, diagnostic=False))
+        def job():
+            while(True):
+                self._scheduler.run(blocking=False)
+                time.sleep(1)
+            
+        self.thread = threading.Thread(target=job , daemon=True)
         self._register_sub_service(2, partial(self._create_or_append_report, append=False, diagnostic=True))
-        # self._register_sub_service(3, partial(self._delete_reports, diagnostic=False))
         self._register_sub_service(4, partial(self._delete_reports, diagnostic=True))
         self._register_sub_service(5, partial(self._toggle_reports, diagnostic=False, enable=True))
         self._register_sub_service(6, partial(self._toggle_reports, diagnostic=False, enable=False))
         self._register_sub_service(7, partial(self._toggle_reports, diagnostic=True, enable=True))
         self._register_sub_service(8, partial(self._toggle_reports, diagnostic=True, enable=False))
-        # self._register_sub_service(9, partial(self._request_report_structures, diagnostic=False))
         self._register_sub_service(11, partial(self._request_report_structures, diagnostic=True))
-        # self._register_sub_service(27, partial(self._request_reports, diagnostic=False))
-        # self._register_sub_service(28, partial(self._request_reports, diagnostic=True))
-        # self._register_sub_service(29, partial(self._create_or_append_report, append=True, diagnostic=False))
-        # self._register_sub_service(30, partial(self._create_or_append_report, append=True, diagnostic=True))
-        # self._register_sub_service(31, partial(self._modify_report_intervals, diagnostic=False))
-        # self._register_sub_service(32, partial(self._modify_report_intervals, diagnostic=True))
-        # self._register_sub_service(33, partial(self._request_interval_properties, diagnostic=False))
-        # self._register_sub_service(34, partial(self._request_interval_properties, diagnostic=True))
 
         #ISIS
         #self._register_sub_service(17,...)
@@ -94,6 +90,8 @@ class Housekeeping(PusService):
         # self._register_sub_service(134,...)
         # self._register_sub_service(140,...)
         # self._register_sub_service(144,...)
+
+        self.thread.start()
 
 
     def add(self, sid: int, collection_interval: int, params_in_report: dict[int, Type[Parameter]] = None, enabled: bool = True, diagnostic: bool = False):
